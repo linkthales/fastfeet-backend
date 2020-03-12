@@ -10,23 +10,49 @@ import File from '../models/File';
 import Queue from '../../lib/Queue';
 import ConfirmationMail from '../jobs/ConfirmationMail';
 
+const { PAGE_SIZE } = process.env;
+
 class ManageDeliveryController {
   async index(request, response) {
-    const { q = '', page = 1, onlyWithProblem = false } = request.query;
+    const {
+      id = null,
+      q = '',
+      page = 1,
+      onlyWithProblem = false,
+    } = request.query;
 
-    const deliveries = await Delivery.findAll({
+    const { count, rows: deliveries } = await Delivery.findAndCountAll({
       where: {
+        id: id || { [Op.ne]: null },
         product: { [Op.iLike]: `%${q}%` },
       },
-      attributes: ['id', 'product', 'cancelled_at', 'start_date', 'end_date'],
-      limit: 20,
-      offset: (page - 1) * 20,
+      attributes: [
+        'id',
+        'recipient_id',
+        'deliveryman_id',
+        'product',
+        'cancelled_at',
+        'start_date',
+        'end_date',
+      ],
+      order: ['id'],
+      limit: PAGE_SIZE,
+      offset: (page - 1) * PAGE_SIZE,
       include: [
-        {
-          model: DeliveryProblem,
-          as: 'problems',
-          attributes: ['id', 'description'],
-        },
+        onlyWithProblem
+          ? {
+              model: DeliveryProblem,
+              as: 'problems',
+              where: {
+                id: { [Op.ne]: null },
+              },
+              attributes: ['id', 'description'],
+            }
+          : {
+              model: DeliveryProblem,
+              as: 'problems',
+              attributes: ['id', 'description'],
+            },
         {
           model: Recipient,
           as: 'recipient',
@@ -60,13 +86,22 @@ class ManageDeliveryController {
       ],
     });
 
-    if (onlyWithProblem) {
-      return response.json(
-        deliveries.filter(delivery => delivery.problems.length)
-      );
-    }
+    const deliveriesWithProblems = deliveries.map(delivery =>
+      delivery.problems
+        ? {
+            ...delivery.dataValues,
+            last_problem: delivery.problems[delivery.problems.length - 1],
+          }
+        : { ...delivery.dataValues }
+    );
 
-    return response.json(deliveries);
+    const pages = Math.floor(count / PAGE_SIZE);
+    const remainder = count % PAGE_SIZE;
+
+    return response.json({
+      pages: !remainder ? pages : pages + 1,
+      deliveries: deliveriesWithProblems,
+    });
   }
 
   async store(request, response) {

@@ -3,13 +3,16 @@ import { Op } from 'sequelize';
 
 import Recipient from '../models/Recipient';
 
+const { PAGE_SIZE } = process.env;
+
 class ManageRecipientController {
   async index(request, response) {
-    const { q = '', page = 1 } = request.query;
+    const { id = null, q = '', page = 1 } = request.query;
 
-    const recipients = await Recipient.findAll({
+    const { count, rows: recipients } = await Recipient.findAndCountAll({
       where: {
-        product: { [Op.iLike]: `%${q}%` },
+        id: id || { [Op.ne]: null },
+        name: { [Op.iLike]: `%${q}%` },
       },
       attributes: [
         'id',
@@ -20,12 +23,17 @@ class ManageRecipientController {
         'state',
         'city',
         'zip_code',
+        'full_address',
       ],
-      limit: 20,
-      offset: (page - 1) * 20,
+      order: ['id'],
+      limit: PAGE_SIZE,
+      offset: (page - 1) * PAGE_SIZE,
     });
 
-    return response.json(recipients);
+    const pages = Math.floor(count / PAGE_SIZE);
+    const remainder = count % PAGE_SIZE;
+
+    return response.json({ pages: !remainder ? pages : pages + 1, recipients });
   }
 
   async store(request, response) {
@@ -36,7 +44,9 @@ class ManageRecipientController {
       complement: Yup.string(),
       state: Yup.string().required(),
       city: Yup.string().required(),
-      zip_code: Yup.number().required(),
+      zip_code: Yup.string()
+        .length(9)
+        .required(),
     });
 
     if (!(await schema.isValid(request.body))) {
@@ -82,7 +92,7 @@ class ManageRecipientController {
       complement: Yup.string(),
       state: Yup.string(),
       city: Yup.string(),
-      zip_code: Yup.number(),
+      zip_code: Yup.string().length(9),
     });
 
     if (!(await schema.isValid(request.body))) {
@@ -117,10 +127,19 @@ class ManageRecipientController {
   }
 
   async delete(request, response) {
-    const { delivery_id: recipient_id } = request.params;
+    const { recipient_id } = request.params;
 
     const recipient = await Recipient.findByPk(recipient_id, {
-      attributes: ['id', 'product'],
+      attributes: [
+        'id',
+        'name',
+        'street',
+        'street_number',
+        'complement',
+        'state',
+        'city',
+        'zip_code',
+      ],
     });
 
     if (!recipient) {

@@ -6,6 +6,8 @@ import Recipient from '../models/Recipient';
 import Queue from '../../lib/Queue';
 import CancellationMail from '../jobs/CancellationMail';
 
+const { PAGE_SIZE } = process.env;
+
 class ManageDeliveryProblemController {
   async index(request, response) {
     const {
@@ -13,16 +15,20 @@ class ManageDeliveryProblemController {
       query: { page = 1 },
     } = request;
 
-    const deliveries = await DeliveryProblem.findAll({
+    const { count, rows: deliveries } = await DeliveryProblem.findAndCountAll({
       where: {
         delivery_id,
       },
       attributes: ['id', 'delivery_id', 'description'],
-      limit: 20,
-      offset: (page - 1) * 20,
+      order: ['id'],
+      limit: PAGE_SIZE,
+      offset: (page - 1) * PAGE_SIZE,
     });
 
-    return response.json(deliveries);
+    const pages = Math.floor(count / PAGE_SIZE);
+    const remainder = count % PAGE_SIZE;
+
+    return response.json({ pages: !remainder ? pages : pages + 1, deliveries });
   }
 
   async delete(request, response) {

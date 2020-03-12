@@ -4,27 +4,37 @@ import { Op } from 'sequelize';
 import Deliveryman from '../models/Deliveryman';
 import File from '../models/File';
 
+const { PAGE_SIZE } = process.env;
+
 class ManageDeliverymanController {
   async index(request, response) {
-    const { q = '', page = 1 } = request.query;
+    const { id = null, q = '', page = 1 } = request.query;
 
-    const deliverymans = await Deliveryman.findAll({
+    const { count, rows: deliverymans } = await Deliveryman.findAndCountAll({
       where: {
+        id: id || { [Op.ne]: null },
         name: { [Op.iLike]: `%${q}%` },
       },
       attributes: ['id', 'name', 'email', 'avatar_id'],
-      limit: 20,
-      offset: (page - 1) * 20,
+      order: ['id'],
+      limit: PAGE_SIZE,
+      offset: (page - 1) * PAGE_SIZE,
       include: [
         {
           model: File,
           as: 'avatar',
-          attributes: ['name', 'path', 'url'],
+          attributes: ['id', 'name', 'path', 'url'],
         },
       ],
     });
 
-    return response.json(deliverymans);
+    const pages = Math.floor(count / PAGE_SIZE);
+    const remainder = count % PAGE_SIZE;
+
+    return response.json({
+      pages: !remainder ? pages : pages + 1,
+      deliverymans,
+    });
   }
 
   async store(request, response) {

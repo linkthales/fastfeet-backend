@@ -32,7 +32,7 @@ module.exports = {
         allowNull: false,
       },
       zip_code: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.STRING,
         allowNull: false,
       },
       created_at: {

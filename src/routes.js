@@ -12,6 +12,7 @@ import DeliveryController from './app/controllers/DeliveryController';
 import OrderController from './app/controllers/OrderController';
 import PackageController from './app/controllers/PackageController';
 import DeliveryProblemController from './app/controllers/DeliveryProblemController';
+import DeliverymanController from './app/controllers/DeliverymanController';
 
 import authMiddleware from './app/middlewares/auth';
 
@@ -40,6 +41,8 @@ routes.get(
   '/deliverymans/:deliveryman_id/deliveries',
   DeliveryController.index
 );
+
+routes.post('/deliverymans', DeliverymanController.store);
 
 routes.post('/delivery/:delivery_id/problems', DeliveryProblemController.store);
 
