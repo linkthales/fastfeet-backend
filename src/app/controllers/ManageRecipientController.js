@@ -7,7 +7,7 @@ const { PAGE_SIZE } = process.env;
 
 class ManageRecipientController {
   async index(request, response) {
-    const { id = null, q = '', page = 1 } = request.query;
+    const { id = null, q = '', page = 1, getAll = false } = request.query;
 
     const { count, rows: recipients } = await Recipient.findAndCountAll({
       where: {
@@ -26,7 +26,7 @@ class ManageRecipientController {
         'full_address',
       ],
       order: ['id'],
-      limit: PAGE_SIZE,
+      limit: getAll ? undefined : PAGE_SIZE,
       offset: (page - 1) * PAGE_SIZE,
     });
 

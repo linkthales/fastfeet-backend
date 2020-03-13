@@ -8,16 +8,17 @@ const { PAGE_SIZE } = process.env;
 
 class ManageDeliverymanController {
   async index(request, response) {
-    const { id = null, q = '', page = 1 } = request.query;
+    const { id = null, q = '', page = 1, getAll = false } = request.query;
 
     const { count, rows: deliverymans } = await Deliveryman.findAndCountAll({
+      distinct: true,
       where: {
         id: id || { [Op.ne]: null },
         name: { [Op.iLike]: `%${q}%` },
       },
       attributes: ['id', 'name', 'email', 'avatar_id'],
       order: ['id'],
-      limit: PAGE_SIZE,
+      limit: getAll ? undefined : PAGE_SIZE,
       offset: (page - 1) * PAGE_SIZE,
       include: [
         {

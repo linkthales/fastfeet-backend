@@ -55,7 +55,7 @@ class OrderController {
     }
 
     if (
-      isBefore(new Date(), startOfHour(setHours(new Date(), 8))) ||
+      isBefore(new Date(), startOfHour(setHours(new Date(), 0))) ||
       isAfter(new Date(), startOfHour(setHours(new Date(), 18)))
     ) {
       return response.status(401).json({

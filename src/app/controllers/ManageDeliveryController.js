@@ -22,6 +22,7 @@ class ManageDeliveryController {
     } = request.query;
 
     const { count, rows: deliveries } = await Delivery.findAndCountAll({
+      distinct: true,
       where: {
         id: id || { [Op.ne]: null },
         product: { [Op.iLike]: `%${q}%` },
