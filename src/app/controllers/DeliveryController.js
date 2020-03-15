@@ -5,6 +5,8 @@ import Recipient from '../models/Recipient';
 import Deliveryman from '../models/Deliveryman';
 import File from '../models/File';
 
+const { PAGE_SIZE } = process.env;
+
 class DeliveryController {
   async index(request, response) {
     const {
@@ -12,15 +14,23 @@ class DeliveryController {
       query: { page = 1, delivered = false },
     } = request;
 
-    const deliveries = await Delivery.findAll({
+    const { count, rows: deliveries } = await Delivery.findAndCountAll({
       where: {
         deliveryman_id,
         cancelled_at: null,
         end_date: delivered ? { [Op.ne]: null } : null,
       },
-      attributes: ['id', 'product', 'cancelled_at', 'start_date', 'end_date'],
-      limit: 20,
-      offset: (page - 1) * 20,
+      attributes: [
+        'id',
+        'product',
+        'cancelled_at',
+        'start_date',
+        'end_date',
+        'created_at',
+      ],
+      order: [['end_date', 'DESC'], 'id'],
+      limit: PAGE_SIZE,
+      offset: (page - 1) * PAGE_SIZE,
       include: [
         {
           model: Recipient,
@@ -30,9 +40,10 @@ class DeliveryController {
             'street',
             'street_number',
             'complement',
-            'state',
             'city',
+            'state',
             'zip_code',
+            'full_address',
           ],
         },
         {
@@ -55,7 +66,13 @@ class DeliveryController {
       ],
     });
 
-    return response.json(deliveries);
+    const pages = Math.floor(count / PAGE_SIZE);
+    const remainder = count % PAGE_SIZE;
+
+    return response.json({
+      pages: !remainder ? pages : pages + 1,
+      deliveries,
+    });
   }
 }
 

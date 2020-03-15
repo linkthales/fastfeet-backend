@@ -3,7 +3,34 @@ import * as Yup from 'yup';
 import DeliveryProblem from '../models/DeliveryProblem';
 import Delivery from '../models/Delivery';
 
+const { PAGE_SIZE } = process.env;
+
 class DeliveryProblemController {
+  async index(request, response) {
+    const {
+      params: { delivery_id },
+      query: { page = 1 },
+    } = request;
+
+    const { count, rows: deliveries } = await DeliveryProblem.findAndCountAll({
+      where: {
+        delivery_id,
+      },
+      attributes: ['id', 'delivery_id', 'description', 'created_at'],
+      order: [['created_at', 'DESC']],
+      limit: PAGE_SIZE,
+      offset: (page - 1) * PAGE_SIZE,
+    });
+
+    const pages = Math.floor(count / PAGE_SIZE);
+    const remainder = count % PAGE_SIZE;
+
+    return response.json({
+      pages: !remainder ? pages : pages + 1,
+      problems: deliveries,
+    });
+  }
+
   async store(request, response) {
     const schema = Yup.object().shape({
       delivery_id: Yup.number().required(),

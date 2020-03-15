@@ -6,31 +6,7 @@ import Recipient from '../models/Recipient';
 import Queue from '../../lib/Queue';
 import CancellationMail from '../jobs/CancellationMail';
 
-const { PAGE_SIZE } = process.env;
-
 class ManageDeliveryProblemController {
-  async index(request, response) {
-    const {
-      params: { delivery_id },
-      query: { page = 1 },
-    } = request;
-
-    const { count, rows: deliveries } = await DeliveryProblem.findAndCountAll({
-      where: {
-        delivery_id,
-      },
-      attributes: ['id', 'delivery_id', 'description'],
-      order: ['id'],
-      limit: PAGE_SIZE,
-      offset: (page - 1) * PAGE_SIZE,
-    });
-
-    const pages = Math.floor(count / PAGE_SIZE);
-    const remainder = count % PAGE_SIZE;
-
-    return response.json({ pages: !remainder ? pages : pages + 1, deliveries });
-  }
-
   async delete(request, response) {
     const { problem_id } = request.params;
 
@@ -56,9 +32,10 @@ class ManageDeliveryProblemController {
                 'street',
                 'street_number',
                 'complement',
-                'state',
                 'city',
+                'state',
                 'zip_code',
+                'full_address',
               ],
             },
           ],
@@ -92,20 +69,8 @@ class ManageDeliveryProblemController {
 
     const {
       deliveryman: { name: deliverymanName, email },
-      recipient: {
-        name: recipientName,
-        street,
-        street_number,
-        complement,
-        state,
-        city,
-        zip_code,
-      },
+      recipient: { name: recipientName, full_address: fullAddress },
     } = delivery;
-
-    const fullAddress = `${street}, ${street_number} ${
-      complement ? ` - ${complement}` : ''
-    } - ${state} - ${city} ${zip_code}`;
 
     await Queue.add(CancellationMail.key, {
       deliverymanName,

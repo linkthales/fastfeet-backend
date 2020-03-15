@@ -44,6 +44,7 @@ routes.get(
 
 routes.post('/deliverymans', DeliverymanController.store);
 
+routes.get('/delivery/:delivery_id/problems', DeliveryProblemController.index);
 routes.post('/delivery/:delivery_id/problems', DeliveryProblemController.store);
 
 routes.use(authMiddleware);
@@ -78,10 +79,6 @@ routes.delete(
   ManageDeliveryController.delete
 );
 
-routes.get(
-  '/manage-deliveries/:delivery_id/problems',
-  ManageDeliveryProblemController.index
-);
 routes.delete(
   '/manage-deliveries/:problem_id/cancel-delivery',
   ManageDeliveryProblemController.delete

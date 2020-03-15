@@ -122,15 +122,7 @@ class ManageDeliveryController {
 
     const {
       deliveryman: { name: deliverymanName, email },
-      recipient: {
-        name: recipientName,
-        street,
-        street_number,
-        complement,
-        state,
-        city,
-        zip_code,
-      },
+      recipient: { name: recipientName, full_address: fullAddress },
     } = await Delivery.findByPk(id, {
       include: [
         {
@@ -147,17 +139,14 @@ class ManageDeliveryController {
             'street',
             'street_number',
             'complement',
-            'state',
             'city',
+            'state',
             'zip_code',
+            'full_address',
           ],
         },
       ],
     });
-
-    const fullAddress = `${street}, ${street_number} ${
-      complement ? ` - ${complement}` : ''
-    } - ${state} - ${city} ${zip_code}`;
 
     await Queue.add(ConfirmationMail.key, {
       deliverymanName,
