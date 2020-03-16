@@ -16,7 +16,13 @@ class ManageDeliveryProblemController {
         {
           model: Delivery,
           as: 'delivery',
-          attributes: ['id', 'deliveryman_id', 'product', 'cancelled_at'],
+          attributes: [
+            'id',
+            'deliveryman_id',
+            'product',
+            'end_date',
+            'cancelled_at',
+          ],
           include: [
             {
               model: Deliveryman,
@@ -54,6 +60,12 @@ class ManageDeliveryProblemController {
     if (!delivery) {
       return response.status(400).json({
         error: `Delivery doesn't exists.`,
+      });
+    }
+
+    if (delivery.end_date) {
+      return response.status(400).json({
+        error: `Delivery with id = ${delivery.id} is already delivered.`,
       });
     }
 

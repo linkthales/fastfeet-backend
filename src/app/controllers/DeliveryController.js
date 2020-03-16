@@ -28,7 +28,7 @@ class DeliveryController {
         'end_date',
         'created_at',
       ],
-      order: [['end_date', 'DESC'], 'id'],
+      order: [['end_date', 'DESC'], ['start_date', 'ASC'], 'id'],
       limit: PAGE_SIZE,
       offset: (page - 1) * PAGE_SIZE,
       include: [
